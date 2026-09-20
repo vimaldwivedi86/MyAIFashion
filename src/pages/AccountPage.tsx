@@ -2,6 +2,18 @@ import { useNavigate } from 'react-router-dom';
 import { getUser } from '../lib/auth';
 import { eraseCustomerData, getOrders, getProfile, maskAccountNumber, maskCardNumber } from '../lib/orders';
 
+const decisionBadgeStyles: Record<string, string> = {
+  approved: 'bg-green-50 text-green-700',
+  review: 'bg-amber-50 text-amber-700',
+  declined: 'bg-red-50 text-red-700',
+};
+
+const decisionLabels: Record<string, string> = {
+  approved: 'Approved',
+  review: 'Review',
+  declined: 'Declined',
+};
+
 export default function AccountPage() {
   const navigate = useNavigate();
   const user = getUser();
@@ -55,7 +67,14 @@ export default function AccountPage() {
                 <li key={order.id} className="py-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">#{order.id.slice(0, 8)}</span>
-                    <span>₹{order.total.toLocaleString()}</span>
+                    <div className="flex items-center gap-2">
+                      {order.decision && (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${decisionBadgeStyles[order.decision.status]}`}>
+                          {decisionLabels[order.decision.status]}
+                        </span>
+                      )}
+                      <span>₹{order.total.toLocaleString()}</span>
+                    </div>
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
                     {new Date(order.createdAt).toLocaleString()} ·{' '}

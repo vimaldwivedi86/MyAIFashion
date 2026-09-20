@@ -1,5 +1,6 @@
 import type { CartItem, CustomerProfile, Order, PaymentDetails, ShippingAddress } from '../types';
 import { hasConsent } from './consent';
+import { decideOrder } from '../../shared/payment';
 
 // Temporary in-memory/localStorage persistence — for dev only, no backend.
 // Mirrors the pattern in lib/auth.ts. Profiles and orders are stored in full
@@ -56,16 +57,26 @@ export async function createOrder(
     createdAt: new Date().toISOString(),
   };
 
-  // Send the order — including card/bank details — to the checkout backend
-  // for processing, then keep a local copy for the account/order-history UI.
+  // Send the order — including card/bank details — to the checkout backend,
+  // which runs the authoritative risk decision and returns it. Falls back to
+  // computing the same decision client-side if the backend is unreachable.
   try {
-    await fetch('/api/checkout', {
+    const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(order),
     });
+    const data = await res.json();
+    if (data?.decision) order.decision = data.decision;
   } catch {
-    // dev backend unreachable — still record the order locally
+    order.decision = decideOrder({
+      total: order.total,
+      dateOfBirth: shipping.dateOfBirth,
+      taxId: shipping.taxId,
+      paymentMethod: payment.method,
+      cardNumber: payment.card?.cardNumber,
+      ifscOrRouting: payment.bank?.ifscOrRouting,
+    });
   }
 
   const orders = readJson<Order[]>(ORDERS_KEY, []);

@@ -5,6 +5,7 @@ import http from 'http';
 import { createHmac } from 'crypto';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
+import { decideOrder } from '../shared/payment.ts';
 
 // Standalone HTTP service for My AI Fashion. Holds every route that
 // receives customer data — contact/shipping PII, card/bank payment
@@ -184,13 +185,22 @@ app.post('/api/checkout', jsonBody, async (req: Request, res: Response) => {
       return;
     }
 
+    const decision = decideOrder({
+      total: Number(order.total) || 0,
+      dateOfBirth: shipping.dateOfBirth,
+      taxId: shipping.taxId,
+      paymentMethod: payment.method,
+      cardNumber: payment.card?.cardNumber,
+      ifscOrRouting: payment.bank?.ifscOrRouting,
+    });
+
     console.log(
       `[checkout] order for ${shipping.email} · ${payment.method === 'card'
         ? `card ending ${String(payment.card?.cardNumber || '').slice(-4)}`
-        : `bank acct ending ${String(payment.bank?.accountNumber || '').slice(-4)}`}`
+        : `bank acct ending ${String(payment.bank?.accountNumber || '').slice(-4)}`} · decision=${decision.status} (score ${decision.score})`
     );
 
-    res.status(201).json({ ok: true, orderId: order.id, receivedAt: new Date().toISOString() });
+    res.status(201).json({ ok: true, orderId: order.id, receivedAt: new Date().toISOString(), decision });
   } catch (err: any) {
     console.error('[/api/checkout]', err.message);
     res.status(400).json({ error: 'Invalid payload' });

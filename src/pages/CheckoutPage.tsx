@@ -4,6 +4,7 @@ import { getUser } from '../lib/auth';
 import { createOrder, getProfile, saveProfile } from '../lib/orders';
 import { useStore } from '../store/useStore';
 import type { BankDetails, CardDetails, PaymentMethod, ShippingAddress } from '../types';
+import { calculateAge, isValidIfsc, luhnCheck, MIN_AGE, PAN_REQUIRED_THRESHOLD } from '../../shared/payment';
 
 const inputClass = 'w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm';
 const labelClass = 'mb-1.5 block text-sm font-medium text-gray-700';
@@ -37,6 +38,7 @@ export default function CheckoutPage() {
   const [card, setCard] = useState<CardDetails>(emptyCard);
   const [bank, setBank] = useState<BankDetails>(emptyBank);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const total = cart.reduce((sum, item) => sum + item.price * (item.customization.quantity || 1), 0);
 
@@ -50,6 +52,25 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || cart.length === 0) return;
+    setError(null);
+
+    if (calculateAge(shipping.dateOfBirth) < MIN_AGE) {
+      setError(`You must be at least ${MIN_AGE} years old to place an order.`);
+      return;
+    }
+    if (total > PAN_REQUIRED_THRESHOLD && !shipping.taxId) {
+      setError(`PAN / Tax ID is required for orders above ₹${PAN_REQUIRED_THRESHOLD.toLocaleString()}.`);
+      return;
+    }
+    if (method === 'card' && !luhnCheck(card.cardNumber)) {
+      setError('That card number does not look valid — double-check the digits.');
+      return;
+    }
+    if (method === 'bank' && !isValidIfsc(bank.ifscOrRouting)) {
+      setError('That IFSC/routing code does not match the expected format (e.g. HDFC0001234).');
+      return;
+    }
+
     setSubmitting(true);
 
     saveProfile(user.username, shipping);
@@ -190,6 +211,8 @@ export default function CheckoutPage() {
             <span className="text-sm text-gray-500">Total</span>
             <span className="text-xl font-semibold">₹{total.toLocaleString()}</span>
           </div>
+
+          {error && <div className="text-sm text-red-600">{error}</div>}
 
           <button
             type="submit"

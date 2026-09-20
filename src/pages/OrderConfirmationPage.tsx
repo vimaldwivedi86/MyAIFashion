@@ -1,5 +1,18 @@
 import { useParams, Link } from 'react-router-dom';
 import { getOrder, maskAccountNumber, maskCardNumber } from '../lib/orders';
+import { detectCardNetwork } from '../../shared/payment';
+
+const decisionStyles: Record<string, string> = {
+  approved: 'bg-green-50 text-green-700 border-green-200',
+  review: 'bg-amber-50 text-amber-700 border-amber-200',
+  declined: 'bg-red-50 text-red-700 border-red-200',
+};
+
+const decisionLabels: Record<string, string> = {
+  approved: 'Approved',
+  review: 'Under review',
+  declined: 'Declined',
+};
 
 export default function OrderConfirmationPage() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -20,6 +33,19 @@ export default function OrderConfirmationPage() {
         <h1 className="mt-3 text-3xl font-semibold text-gray-900">Thank you, {order.shipping.fullName.split(' ')[0]}</h1>
         <p className="mt-2 text-sm text-gray-500">Order #{order.id}</p>
 
+        {order.decision && (
+          <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${decisionStyles[order.decision.status]}`}>
+            <p className="font-semibold">
+              {decisionLabels[order.decision.status]} · risk score {order.decision.score}
+            </p>
+            <ul className="mt-1 list-inside list-disc text-xs opacity-80">
+              {order.decision.reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="mt-8 space-y-6">
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-800">Shipping to</h2>
@@ -35,7 +61,7 @@ export default function OrderConfirmationPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-800">Payment</h2>
             <p className="mt-2 text-sm text-gray-600">
               {order.payment.method === 'card' && order.payment.card
-                ? `Card ending in ${maskCardNumber(order.payment.card.cardNumber)}`
+                ? `${detectCardNetwork(order.payment.card.cardNumber)} card ending in ${maskCardNumber(order.payment.card.cardNumber)}`
                 : order.payment.bank
                 ? `Bank transfer · ${order.payment.bank.bankName} · ${maskAccountNumber(order.payment.bank.accountNumber)}`
                 : '—'}

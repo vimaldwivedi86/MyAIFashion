@@ -1,3 +1,6 @@
+import type { OrderDecision } from '../../shared/payment';
+export type { OrderDecision, DecisionStatus } from '../../shared/payment';
+
 export interface TShirtTemplate {
   id: string;
   name: string;
@@ -102,6 +105,7 @@ export interface Order {
   shipping: ShippingAddress;
   payment: PaymentDetails;
   createdAt: string;
+  decision?: OrderDecision;
 }
 
 export interface AIRecommendation {
