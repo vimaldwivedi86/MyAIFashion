@@ -16,6 +16,7 @@ interface AppState {
   setQuantity: (q: number) => void;
   addToCart: (price: number) => void;
   removeFromCart: (id: string) => void;
+  removeAllFromCart: () => void;
   toggleCart: () => void;
   setAiLoading: (v: boolean) => void;
   setAiRecommendation: (r: string) => void;
@@ -57,6 +58,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   removeFromCart: (id) => set((s) => ({ cart: s.cart.filter((i) => i.id !== id) })),
+  removeAllFromCart: () => set({ cart: [] }),
 
   toggleCart: () => set((s) => ({ isCartOpen: !s.isCartOpen })),
 

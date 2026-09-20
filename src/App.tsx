@@ -9,6 +9,9 @@ import FabricsPage from './pages/FabricsPage';
 import AboutPage from './pages/AboutPage';
 import PrivacyRightsPage from './pages/PrivacyRightsPage';
 import LoginPage from './pages/LoginPage';
+import CheckoutPage from './pages/CheckoutPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import AccountPage from './pages/AccountPage';
 import RequireAuth from './components/RequireAuth';
 
 export default function App() {
@@ -24,6 +27,9 @@ export default function App() {
         <Route path="/fabrics" element={<FabricsPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/privacy-rights" element={<PrivacyRightsPage />} />
+        <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
+        <Route path="/order-confirmation/:orderId" element={<RequireAuth><OrderConfirmationPage /></RequireAuth>} />
+        <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
       </Routes>
       <Footer />
     </BrowserRouter>

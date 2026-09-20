@@ -23,5 +23,6 @@ declare global {
 
   interface Window {
     ScrutoraConsent?: ScrutoraConsentAPI;
+    dataLayer?: Record<string, unknown>[];
   }
 }

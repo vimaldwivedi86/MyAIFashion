@@ -1,8 +1,16 @@
 import { X, ShoppingBag, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
+import { isAuthenticated } from '../../lib/auth';
 
 export default function CartDrawer() {
   const { cart, isCartOpen, toggleCart, removeFromCart } = useStore();
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    toggleCart();
+    navigate(isAuthenticated() ? '/checkout' : '/login', { state: { from: { pathname: '/checkout' } } });
+  };
 
   const total = cart.reduce((sum, item) => sum + item.price * (item.customization.quantity || 1), 0);
 
@@ -98,7 +106,10 @@ export default function CartDrawer() {
               <span className="text-xs text-gray-500 tracking-wide">Shipping</span>
               <span className="text-xs text-gray-500">Calculated at checkout</span>
             </div>
-            <button className="w-full bg-black text-white text-xs tracking-[0.14em] uppercase py-4 hover:bg-gray-900 transition-colors">
+            <button
+              onClick={handleCheckout}
+              className="w-full bg-black text-white text-xs tracking-[0.14em] uppercase py-4 hover:bg-gray-900 transition-colors"
+            >
               Checkout
             </button>
             <button

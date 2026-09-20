@@ -69,7 +69,9 @@ export default function Navbar() {
             <div className="flex items-center gap-4">
               {isAuthenticated() ? (
                 <>
-                  <span className="text-xs text-gray-600">{getUser()?.username}</span>
+                  <Link to="/account" className="text-xs text-gray-600 hover:text-black transition-colors">
+                    {getUser()?.username}
+                  </Link>
                   <button
                     onClick={() => { logout(); window.location.reload(); }}
                     className="text-xs text-gray-500 hover:text-black transition-colors"
