@@ -47,13 +47,13 @@ export default function CheckoutPage() {
   const updateBank = (field: keyof BankDetails) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setBank((b) => ({ ...b, [field]: e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || cart.length === 0) return;
     setSubmitting(true);
 
     saveProfile(user.username, shipping);
-    const order = createOrder(
+    const order = await createOrder(
       user.username,
       cart,
       total,

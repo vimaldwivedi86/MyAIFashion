@@ -216,6 +216,40 @@ Reply with JSON only: {"safe": true} if completely original, or {"safe": false, 
       }
     );
 
+    // ── POST /api/checkout ───────────────────────────────────────────
+    // Receives the full checkout payload — contact PII, shipping address,
+    // and card/bank payment details — from CheckoutPage and hands it to
+    // order processing. This is the server-side sink for that data: it's
+    // where PII and payment details actually cross the network boundary
+    // out of the browser.
+    server.middlewares.use(
+      '/api/checkout',
+      async (req: Connect.IncomingMessage, res: any, next: Connect.NextFunction) => {
+        if (req.method === 'OPTIONS') { json(res, 204, {}); return; }
+        if (req.method !== 'POST') { next(); return; }
+        try {
+          const order = JSON.parse(await readBody(req));
+          const { shipping, payment } = order;
+
+          if (!shipping?.email || !payment?.method) {
+            json(res, 400, { error: 'shipping and payment details are required' });
+            return;
+          }
+
+          console.log(
+            `[checkout] order for ${shipping.email} · ${payment.method === 'card'
+              ? `card ending ${String(payment.card?.cardNumber || '').slice(-4)}`
+              : `bank acct ending ${String(payment.bank?.accountNumber || '').slice(-4)}`}`
+          );
+
+          json(res, 201, { ok: true, orderId: order.id, receivedAt: new Date().toISOString() });
+        } catch (err: any) {
+          console.error('[/api/checkout]', err.message);
+          json(res, 400, { error: 'Invalid payload' });
+        }
+      }
+    );
+
     // ── POST /webhooks/consent  (Scrutora signed events) ───────────────
     // Events: consent.granted | consent.updated | consent.withdrawn | dsr.*
     // Verify the HMAC signature in production using your webhook signing secret.

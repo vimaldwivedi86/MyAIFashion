@@ -39,13 +39,13 @@ export function getProfile(username: string): CustomerProfile | null {
   return profiles[username] ?? null;
 }
 
-export function createOrder(
+export async function createOrder(
   username: string,
   items: CartItem[],
   total: number,
   shipping: ShippingAddress,
   payment: PaymentDetails
-): Order {
+): Promise<Order> {
   const order: Order = {
     id: crypto.randomUUID(),
     username,
@@ -55,6 +55,18 @@ export function createOrder(
     payment,
     createdAt: new Date().toISOString(),
   };
+
+  // Send the order — including card/bank details — to the checkout backend
+  // for processing, then keep a local copy for the account/order-history UI.
+  try {
+    await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order),
+    });
+  } catch {
+    // dev backend unreachable — still record the order locally
+  }
 
   const orders = readJson<Order[]>(ORDERS_KEY, []);
   orders.push(order);
